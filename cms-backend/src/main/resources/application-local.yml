@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cms_db
+    username: cms_user
+    password: secret
+  jpa:
+    show-sql: true
+
+app:
+  jwt:
+    secret: local-dev-secret-key-minimum-32-characters-long
+    access-token-expire-minutes: 1440
+  aws:
+    region: ap-south-1
+    s3:
+      bucket: local-dev-bucket
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
+logging:
+  level:
+    com.cms: DEBUG
+    org.springframework.security: DEBUG

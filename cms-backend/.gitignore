@@ -1,0 +1,16 @@
+# Build output
+build/
+.gradle/
+
+# Secrets
+.env
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Gradle wrapper jar (kept: wrapper properties are committed)
+gradle/wrapper/gradle-wrapper.jar
