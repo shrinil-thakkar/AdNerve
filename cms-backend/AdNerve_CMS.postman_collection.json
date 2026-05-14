@@ -10,7 +10,8 @@
     { "key": "deviceJwt",  "value": "" },
     { "key": "screenId",   "value": "" },
     { "key": "slotId",     "value": "" },
-    { "key": "mediaId",    "value": "" },
+    { "key": "mediaId",      "value": "" },
+    { "key": "uploadUrl",    "value": "" },
     { "key": "assignmentId", "value": "" }
   ],
   "item": [
@@ -283,27 +284,12 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] }
+            "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] },
+            "description": "Returns only active (confirmed) media records. Pending records are hidden."
           }
         },
         {
-          "name": "Request Upload URL",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{jwt}}" }
-            ],
-            "url": { "raw": "{{baseUrl}}/v1/media/upload-url", "host": ["{{baseUrl}}"], "path": ["v1", "media", "upload-url"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"filename\": \"promo-video.mp4\",\n  \"mimeType\": \"video/mp4\",\n  \"fileSizeBytes\": 10485760\n}"
-            },
-            "description": "Returns a presigned S3 PUT URL (valid 15 min). PUT the file directly to that URL, then call 'Register Media' with the returned s3Key."
-          }
-        },
-        {
-          "name": "Register Media",
+          "name": "Create Media",
           "event": [
             {
               "listen": "test",
@@ -313,7 +299,9 @@
                   "    const body = pm.response.json();",
                   "    if (body.success && body.data) {",
                   "        pm.collectionVariables.set('mediaId', body.data.id);",
+                  "        pm.collectionVariables.set('uploadUrl', body.data.uploadUrl);",
                   "        console.log('mediaId saved:', body.data.id);",
+                  "        console.log('uploadUrl saved — PUT your file to this URL');",
                   "    }",
                   "}"
                 ]
@@ -329,9 +317,33 @@
             "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Promo Video Q1\",\n  \"mediaType\": \"video\",\n  \"s3Key\": \"media/videos/2026/05/example-key-promo.mp4\",\n  \"fileSizeBytes\": 10485760,\n  \"durationSeconds\": 30,\n  \"mimeType\": \"video/mp4\"\n}",
-              "description": "Replace s3Key with the value returned by 'Request Upload URL'"
-            }
+              "raw": "{\n  \"name\": \"Promo Video Q1\",\n  \"filename\": \"promo-q1.mp4\",\n  \"mimeType\": \"video/mp4\",\n  \"fileSizeBytes\": 10485760,\n  \"durationSeconds\": 30\n}"
+            },
+            "description": "Step 1 of 2. Creates a pending DB record and returns a presigned S3 PUT URL (valid 15 min). mediaType is derived server-side from mimeType.\n\nAfter this call:\n1. PUT your file directly to the uploadUrl with Content-Type matching mimeType\n2. Call 'Confirm Media' to mark the record active"
+          }
+        },
+        {
+          "name": "Upload File to S3 (PUT to uploadUrl)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "video/mp4" }
+            ],
+            "url": { "raw": "{{uploadUrl}}", "host": ["{{uploadUrl}}"] },
+            "body": {
+              "mode": "file",
+              "file": {}
+            },
+            "description": "Step 2 of 3 (direct S3 upload — no backend involved).\n\nSelect your file in the Body tab (binary). The Content-Type header must match the mimeType you sent in 'Create Media' — S3 enforces this as part of the presigned URL signature and will reject mismatches.\n\nThe {{uploadUrl}} variable is auto-populated by 'Create Media'."
+          }
+        },
+        {
+          "name": "Confirm Media",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}/confirm", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}", "confirm"] },
+            "description": "Step 3 of 3. Call this after the S3 upload completes. Marks the record active so it appears in list, can be assigned to slots, and is included in schedule pushes to devices."
           }
         },
         {
@@ -340,7 +352,7 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
-            "description": "Returns media record with a fresh 24hr presigned download URL"
+            "description": "Returns a single media record regardless of status. Active records include a fresh 24hr presigned download URL. Pending records return downloadUrl: null."
           }
         },
         {
@@ -349,7 +361,7 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
-            "description": "Deletes the S3 object then removes the DB record. Requires real AWS credentials."
+            "description": "Deletes the S3 object then removes the DB record. Requires real AWS credentials — will fail locally with fake credentials."
           }
         }
       ]
