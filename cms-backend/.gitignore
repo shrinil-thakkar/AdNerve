@@ -12,5 +12,3 @@ build/
 # OS
 .DS_Store
 
-# Gradle wrapper jar (kept: wrapper properties are committed)
-gradle/wrapper/gradle-wrapper.jar
