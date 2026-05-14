@@ -1,0 +1,518 @@
+{
+  "info": {
+    "name": "AdNerve CMS Backend",
+    "description": "Full API collection for the AdNerve CMS backend. Set `baseUrl` variable to your server (default: http://localhost:8080). Login first — the collection auto-saves the JWT and device JWT into collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",    "value": "http://localhost:8080" },
+    { "key": "jwt",        "value": "" },
+    { "key": "deviceJwt",  "value": "" },
+    { "key": "screenId",   "value": "" },
+    { "key": "slotId",     "value": "" },
+    { "key": "mediaId",    "value": "" },
+    { "key": "assignmentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('jwt', body.data.accessToken);",
+                  "        console.log('JWT saved to collection variable');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["v1", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"password\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login — wrong password (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["v1", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"wrongpassword\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login — missing email (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["v1", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"password\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Issue Device Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('deviceJwt', body.data.accessToken);",
+                  "        console.log('Device JWT saved to collection variable');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/auth/device/token", "host": ["{{baseUrl}}"], "path": ["v1", "auth", "device", "token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"screenId\": \"{{screenId}}\",\n  \"expiresDays\": 365\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Screens",
+      "item": [
+        {
+          "name": "List Screens",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens", "host": ["{{baseUrl}}"], "path": ["v1", "screens"] }
+          }
+        },
+        {
+          "name": "Create Screen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('screenId', body.data.id);",
+                  "        console.log('screenId saved:', body.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/screens", "host": ["{{baseUrl}}"], "path": ["v1", "screens"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lobby Screen\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Screen",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}"] }
+          }
+        },
+        {
+          "name": "Update Screen",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lobby Screen (Updated)\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Screen",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}"] }
+          }
+        },
+        {
+          "name": "List Screens — unauthenticated (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/v1/screens", "host": ["{{baseUrl}}"], "path": ["v1", "screens"] }
+          }
+        },
+        {
+          "name": "Get Screen — not found (404)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "00000000-0000-0000-0000-000000000000"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slots",
+      "item": [
+        {
+          "name": "List Slots",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] }
+          }
+        },
+        {
+          "name": "Create Slot — time_based",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('slotId', body.data.id);",
+                  "        console.log('slotId saved:', body.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Morning Prime\",\n  \"slotType\": \"time_based\",\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"12:00:00\",\n  \"daysOfWeek\": [1, 2, 3, 4, 5],\n  \"position\": null,\n  \"durationSeconds\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Slot — sequential",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Playlist Item\",\n  \"slotType\": \"sequential\",\n  \"startTime\": null,\n  \"endTime\": null,\n  \"daysOfWeek\": null,\n  \"position\": 1,\n  \"durationSeconds\": 15\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Slot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots", "{{slotId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Morning Prime (Updated)\",\n  \"slotType\": \"time_based\",\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"11:00:00\",\n  \"daysOfWeek\": [0, 1, 2, 3, 4, 5, 6],\n  \"position\": null,\n  \"durationSeconds\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Slot",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots", "{{slotId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "List Media",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] }
+          }
+        },
+        {
+          "name": "Request Upload URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/media/upload-url", "host": ["{{baseUrl}}"], "path": ["v1", "media", "upload-url"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"promo-video.mp4\",\n  \"mimeType\": \"video/mp4\",\n  \"fileSizeBytes\": 10485760\n}"
+            },
+            "description": "Returns a presigned S3 PUT URL (valid 15 min). PUT the file directly to that URL, then call 'Register Media' with the returned s3Key."
+          }
+        },
+        {
+          "name": "Register Media",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('mediaId', body.data.id);",
+                  "        console.log('mediaId saved:', body.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Promo Video Q1\",\n  \"mediaType\": \"video\",\n  \"s3Key\": \"media/videos/2026/05/example-key-promo.mp4\",\n  \"fileSizeBytes\": 10485760,\n  \"durationSeconds\": 30,\n  \"mimeType\": \"video/mp4\"\n}",
+              "description": "Replace s3Key with the value returned by 'Request Upload URL'"
+            }
+          }
+        },
+        {
+          "name": "Get Media",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
+            "description": "Returns media record with a fresh 24hr presigned download URL"
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
+            "description": "Deletes the S3 object then removes the DB record. Requires real AWS credentials."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "List Assignments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments"] }
+          }
+        },
+        {
+          "name": "Create Assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('assignmentId', body.data.id);",
+                  "        console.log('assignmentId saved:', body.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaId\": \"{{mediaId}}\",\n  \"displayOrder\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Assignment",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments/{{assignmentId}}", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments", "{{assignmentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Push",
+      "item": [
+        {
+          "name": "Push Schedule to Screen",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/push", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "push"] },
+            "description": "Builds the full schedule payload (time-based + sequential slots with presigned media URLs) and pushes it to the screen via SSE. Also returns the payload in the response."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device",
+      "item": [
+        {
+          "name": "Heartbeat",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{deviceJwt}}" }],
+            "url": { "raw": "{{baseUrl}}/v1/device/heartbeat", "host": ["{{baseUrl}}"], "path": ["v1", "device", "heartbeat"] },
+            "description": "Updates lastSeenAt on the screen. Get deviceJwt from 'Issue Device Token' first."
+          }
+        },
+        {
+          "name": "Log Impressions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{deviceJwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/device/impressions", "host": ["{{baseUrl}}"], "path": ["v1", "device", "impressions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impressions\": [\n    {\n      \"slotId\": \"{{slotId}}\",\n      \"mediaId\": \"{{mediaId}}\",\n      \"playedAt\": \"2026-05-13T10:00:00Z\",\n      \"durationPlayedSeconds\": 30,\n      \"completed\": true\n    }\n  ]\n}"
+            },
+            "description": "Batch upload up to 500 impression records from the device. Uses device JWT."
+          }
+        },
+        {
+          "name": "SSE Stream (subscribe)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{deviceJwt}}" },
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": { "raw": "{{baseUrl}}/v1/device/stream", "host": ["{{baseUrl}}"], "path": ["v1", "device", "stream"] },
+            "description": "Opens a Server-Sent Events stream. The device listens here for schedule updates pushed by the admin. Postman will keep the connection open — use a browser or curl to see the stream."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Query Impressions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/v1/analytics/impressions?screenId={{screenId}}&from=2026-05-01&to=2026-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "analytics", "impressions"],
+              "query": [
+                { "key": "screenId", "value": "{{screenId}}" },
+                { "key": "mediaId",  "value": "", "disabled": true, "description": "Optional filter by media" },
+                { "key": "from",     "value": "2026-05-01",  "description": "ISO date (YYYY-MM-DD)" },
+                { "key": "to",       "value": "2026-05-31",  "description": "ISO date (YYYY-MM-DD)" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Docs",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator", "health"] }
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/swagger-ui/index.html", "host": ["{{baseUrl}}"], "path": ["swagger-ui", "index.html"] }
+          }
+        },
+        {
+          "name": "OpenAPI Spec (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/v3/api-docs", "host": ["{{baseUrl}}"], "path": ["v3", "api-docs"] }
+          }
+        }
+      ]
+    }
+  ]
+}

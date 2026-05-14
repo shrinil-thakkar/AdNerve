@@ -1,11 +1,9 @@
 package com.cms.service;
 
-import com.cms.dto.request.MediaUploadUrlRequest;
-import com.cms.dto.request.RegisterMediaRequest;
+import com.cms.dto.request.CreateMediaRequest;
+import com.cms.dto.response.CreateMediaResponse;
 import com.cms.dto.response.MediaResponse;
-import com.cms.dto.response.UploadUrlResponse;
 import com.cms.entity.Media;
-import com.cms.entity.User;
 import com.cms.repository.MediaRepository;
 import com.cms.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +19,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +26,9 @@ import java.util.UUID;
 @Service
 @Transactional
 public class MediaService {
+
+    public static final String STATUS_PENDING = "pending";
+    public static final String STATUS_ACTIVE  = "active";
 
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp", "image/gif");
@@ -57,7 +57,7 @@ public class MediaService {
         this.s3Client = s3Client;
     }
 
-    public UploadUrlResponse generateUploadUrl(MediaUploadUrlRequest request) {
+    public CreateMediaResponse create(CreateMediaRequest request, UUID userId) {
         validateMimeType(request.mimeType());
         String mediaSubDir = request.mimeType().startsWith("image/") ? "images" : "videos";
         LocalDate today = LocalDate.now();
@@ -65,36 +65,42 @@ public class MediaService {
                 mediaSubDir, today.getYear(), today.getMonthValue(),
                 UUID.randomUUID(), request.filename());
 
-        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofSeconds(uploadExpireSeconds))
-                .putObjectRequest(r -> r.bucket(bucket).key(s3Key).contentType(request.mimeType()))
-                .build();
-
-        String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
-        return new UploadUrlResponse(uploadUrl, s3Key, uploadExpireSeconds);
-    }
-
-    public MediaResponse register(RegisterMediaRequest request, UUID userId) {
-        validateMimeType(request.mimeType());
         Media media = new Media();
         media.setName(request.name());
-        media.setMediaType(request.mediaType());
-        media.setS3Key(request.s3Key());
+        media.setMediaType(request.mimeType().startsWith("image/") ? "image" : "video");
+        media.setS3Key(s3Key);
         media.setS3Bucket(bucket);
         media.setFileSizeBytes(request.fileSizeBytes());
         media.setDurationSeconds(request.durationSeconds());
         media.setMimeType(request.mimeType());
-
+        media.setStatus(STATUS_PENDING);
         if (userId != null) {
             userRepository.findById(userId).ifPresent(media::setUploadedBy);
         }
+        Media saved = mediaRepository.save(media);
 
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofSeconds(uploadExpireSeconds))
+                .putObjectRequest(r -> r.bucket(bucket).key(s3Key).contentType(request.mimeType()))
+                .build();
+        String uploadUrl = s3Presigner.presignPutObject(presignRequest).url().toString();
+
+        return new CreateMediaResponse(saved.getId(), uploadUrl, s3Key, uploadExpireSeconds);
+    }
+
+    public MediaResponse confirm(UUID id) {
+        Media media = mediaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
+        if (STATUS_ACTIVE.equals(media.getStatus())) {
+            return toResponse(media, null);
+        }
+        media.setStatus(STATUS_ACTIVE);
         return toResponse(mediaRepository.save(media), null);
     }
 
     @Transactional(readOnly = true)
     public List<MediaResponse> findAll() {
-        return mediaRepository.findAllByOrderByCreatedAtDesc().stream()
+        return mediaRepository.findAllByStatusOrderByCreatedAtDesc(STATUS_ACTIVE).stream()
                 .map(m -> toResponse(m, null))
                 .toList();
     }
@@ -103,7 +109,8 @@ public class MediaService {
     public MediaResponse findById(UUID id) {
         Media media = mediaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
-        String downloadUrl = generateDownloadUrl(media.getS3Key());
+        String downloadUrl = STATUS_ACTIVE.equals(media.getStatus())
+                ? generateDownloadUrl(media.getS3Key()) : null;
         return toResponse(media, downloadUrl);
     }
 
@@ -127,8 +134,7 @@ public class MediaService {
 
     private void validateMimeType(String mimeType) {
         if (mimeType == null) return;
-        boolean allowed = ALLOWED_IMAGE_TYPES.contains(mimeType) || ALLOWED_VIDEO_TYPES.contains(mimeType);
-        if (!allowed) {
+        if (!ALLOWED_IMAGE_TYPES.contains(mimeType) && !ALLOWED_VIDEO_TYPES.contains(mimeType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Unsupported media type: " + mimeType);
         }
@@ -139,6 +145,7 @@ public class MediaService {
                 m.getId(),
                 m.getName(),
                 m.getMediaType(),
+                m.getStatus(),
                 m.getS3Key(),
                 m.getS3Bucket(),
                 m.getFileSizeBytes(),

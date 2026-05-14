@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import static com.cms.service.MediaService.STATUS_ACTIVE;
+
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +50,7 @@ public class ScheduleService {
             List<SlotAssignment> assignments =
                     assignmentRepository.findBySlotIdAndIsActiveTrueOrderByPriority(slot.getId());
             List<ScheduleResponse.MediaEntry> mediaEntries = assignments.stream()
+                    .filter(a -> STATUS_ACTIVE.equals(a.getMedia().getStatus()))
                     .map(this::buildMediaEntry)
                     .toList();
 

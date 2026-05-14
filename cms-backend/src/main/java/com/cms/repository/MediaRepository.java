@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface MediaRepository extends JpaRepository<Media, UUID> {
 
-    List<Media> findAllByOrderByCreatedAtDesc();
+    List<Media> findAllByStatusOrderByCreatedAtDesc(String status);
 }

@@ -43,6 +43,9 @@ public class Media {
     @Column(name = "thumbnail_s3_key", length = 1024)
     private String thumbnailS3Key;
 
+    @Column(nullable = false, length = 20)
+    private String status;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by")
     private User uploadedBy;

@@ -1,10 +1,9 @@
 package com.cms.controller;
 
-import com.cms.dto.request.MediaUploadUrlRequest;
-import com.cms.dto.request.RegisterMediaRequest;
+import com.cms.dto.request.CreateMediaRequest;
 import com.cms.dto.response.ApiResponse;
+import com.cms.dto.response.CreateMediaResponse;
 import com.cms.dto.response.MediaResponse;
-import com.cms.dto.response.UploadUrlResponse;
 import com.cms.security.AdminUserDetails;
 import com.cms.service.MediaService;
 import jakarta.validation.Valid;
@@ -31,19 +30,18 @@ public class MediaController {
         return ResponseEntity.ok(ApiResponse.ok(mediaService.findAll()));
     }
 
-    @PostMapping("/upload-url")
-    public ResponseEntity<ApiResponse<UploadUrlResponse>> getUploadUrl(
-            @Valid @RequestBody MediaUploadUrlRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(mediaService.generateUploadUrl(request)));
-    }
-
     @PostMapping
-    public ResponseEntity<ApiResponse<MediaResponse>> register(
-            @Valid @RequestBody RegisterMediaRequest request,
+    public ResponseEntity<ApiResponse<CreateMediaResponse>> create(
+            @Valid @RequestBody CreateMediaRequest request,
             @AuthenticationPrincipal AdminUserDetails userDetails) {
         UUID userId = userDetails != null ? userDetails.getUser().getId() : null;
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(mediaService.register(request, userId)));
+                .body(ApiResponse.ok(mediaService.create(request, userId)));
+    }
+
+    @PatchMapping("/{mediaId}/confirm")
+    public ResponseEntity<ApiResponse<MediaResponse>> confirm(@PathVariable UUID mediaId) {
+        return ResponseEntity.ok(ApiResponse.ok(mediaService.confirm(mediaId)));
     }
 
     @GetMapping("/{mediaId}")

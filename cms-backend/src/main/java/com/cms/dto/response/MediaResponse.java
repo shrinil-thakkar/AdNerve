@@ -7,6 +7,7 @@ public record MediaResponse(
         UUID id,
         String name,
         String mediaType,
+        String status,
         String s3Key,
         String s3Bucket,
         Long fileSizeBytes,
