@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# Never commit terraform.tfvars to git.
+
+aws_region           = "ap-south-1"
+app_name             = "cms"
+ecr_image_uri        = "872709212110.dkr.ecr.ap-south-1.amazonaws.com/cmsbackend:latest"
+s3_media_bucket_name = "cms-media-872709212110"
+domain_name          = "api.magnificomarketing.in"
+db_username          = "cms_user"
+db_name              = "cms_db"
+container_port       = 8080
+task_cpu             = 512
+task_memory          = 1024
+
+# Sensitive — fill in real values
+db_password = ""   # min 8 chars, no special chars that break JDBC URLs
+jwt_secret  = ""   # min 32 random characters
