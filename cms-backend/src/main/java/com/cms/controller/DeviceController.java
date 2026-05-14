@@ -59,8 +59,9 @@ public class DeviceController {
                 .map(entry -> {
                     ImpressionLog log = new ImpressionLog();
                     log.setScreenId(screenId);
-                    log.setSlotId(entry.slotId());
                     log.setMediaId(entry.mediaId());
+                    log.setCategory(entry.category());
+                    log.setSlotPosition(entry.slotPosition());
                     log.setPlayedAt(entry.playedAt());
                     log.setDurationPlayedSeconds(entry.durationPlayedSeconds());
                     log.setCompleted(Boolean.TRUE.equals(entry.completed()));

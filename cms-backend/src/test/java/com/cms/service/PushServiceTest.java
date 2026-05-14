@@ -28,7 +28,7 @@ class PushServiceTest {
     void push_publishesToSseAndReturnsSchedule() {
         UUID screenId = UUID.randomUUID();
         ScheduleResponse schedule = new ScheduleResponse(
-                screenId, "UTC", OffsetDateTime.now(), List.of(), List.of());
+                screenId, "UTC", 10, OffsetDateTime.now(), List.of());
 
         when(scheduleService.resolveSchedule(screenId)).thenReturn(schedule);
         when(sseEventBus.isConnected(screenId.toString())).thenReturn(true);
@@ -43,7 +43,7 @@ class PushServiceTest {
     void push_noSseConnection_stillReturnsSchedule() {
         UUID screenId = UUID.randomUUID();
         ScheduleResponse schedule = new ScheduleResponse(
-                screenId, "UTC", OffsetDateTime.now(), List.of(), List.of());
+                screenId, "UTC", 10, OffsetDateTime.now(), List.of());
 
         when(scheduleService.resolveSchedule(screenId)).thenReturn(schedule);
         when(sseEventBus.isConnected(screenId.toString())).thenReturn(false);

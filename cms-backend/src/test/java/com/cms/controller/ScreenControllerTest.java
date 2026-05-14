@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,8 +42,7 @@ class ScreenControllerTest {
 
     private ScreenResponse sampleScreen() {
         return new ScreenResponse(UUID.randomUUID(), "Lobby Screen", "Main Entrance",
-                UUID.randomUUID().toString(), "Asia/Kolkata", true,
-                null, OffsetDateTime.now(), OffsetDateTime.now(), false);
+                "Asia/Kolkata", 10, 6, null, false, true);
     }
 
     @Test
@@ -68,7 +66,7 @@ class ScreenControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreateScreenRequest("Lobby Screen", "Main Entrance", "Asia/Kolkata"))))
+                                new CreateScreenRequest("Lobby Screen", "Main Entrance", "Asia/Kolkata", 10, 6))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }

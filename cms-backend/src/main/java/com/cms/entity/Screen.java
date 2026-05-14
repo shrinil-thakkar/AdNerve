@@ -32,6 +32,12 @@ public class Screen {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "default_slot_length_seconds", nullable = false)
+    private Integer defaultSlotLengthSeconds = 10;
+
+    @Column(name = "default_slot_count", nullable = false)
+    private Integer defaultSlotCount = 6;
+
     @Column(name = "last_seen_at")
     private OffsetDateTime lastSeenAt;
 

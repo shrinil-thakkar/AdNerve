@@ -4,49 +4,34 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "slots")
+@Table(name = "screen_categories")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Slot {
+public class ScreenCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "screen_id", nullable = false)
-    private Screen screen;
+    @Column(name = "screen_id", nullable = false)
+    private UUID screenId;
 
-    @Column(nullable = false)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private CategoryType category;
 
-    @Column(name = "slot_type", nullable = false, length = 20)
-    private String slotType;
-
-    @Column(name = "start_time")
+    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-    @Column(name = "end_time")
+    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
-
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "days_of_week")
-    private Integer[] daysOfWeek;
-
-    @Column(name = "sequence_order")
-    private Integer sequenceOrder;
-
-    @Column(name = "duration_seconds")
-    private Integer durationSeconds;
 
     @Column(name = "is_active")
     private Boolean isActive = true;

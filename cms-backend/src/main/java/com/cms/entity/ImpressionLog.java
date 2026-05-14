@@ -22,11 +22,14 @@ public class ImpressionLog {
     @Column(name = "screen_id", nullable = false)
     private UUID screenId;
 
-    @Column(name = "slot_id", nullable = false)
-    private UUID slotId;
-
     @Column(name = "media_id", nullable = false)
     private UUID mediaId;
+
+    @Column(name = "category", length = 20)
+    private String category;
+
+    @Column(name = "slot_position")
+    private Integer slotPosition;
 
     @Column(name = "played_at", nullable = false)
     private OffsetDateTime playedAt;

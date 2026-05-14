@@ -12,8 +12,9 @@ public record ImpressionBatchRequest(
         @NotNull @Size(max = 500) List<@Valid ImpressionEntry> impressions
 ) {
     public record ImpressionEntry(
-            @NotNull UUID slotId,
             @NotNull UUID mediaId,
+            String category,
+            Integer slotPosition,
             @NotNull OffsetDateTime playedAt,
             Integer durationPlayedSeconds,
             Boolean completed

@@ -7,11 +7,10 @@ public record ScreenResponse(
         UUID id,
         String name,
         String location,
-        String deviceToken,
         String timezone,
-        Boolean isActive,
+        Integer defaultSlotLengthSeconds,
+        Integer defaultSlotCount,
         OffsetDateTime lastSeenAt,
-        OffsetDateTime createdAt,
-        OffsetDateTime updatedAt,
-        boolean isOnline
+        boolean online,
+        boolean isActive
 ) {}

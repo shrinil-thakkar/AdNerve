@@ -5,14 +5,14 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl",    "value": "http://localhost:8080" },
-    { "key": "jwt",        "value": "" },
-    { "key": "deviceJwt",  "value": "" },
-    { "key": "screenId",   "value": "" },
-    { "key": "slotId",     "value": "" },
-    { "key": "mediaId",      "value": "" },
-    { "key": "uploadUrl",    "value": "" },
-    { "key": "assignmentId", "value": "" }
+    { "key": "baseUrl",       "value": "http://localhost:8080" },
+    { "key": "jwt",           "value": "" },
+    { "key": "deviceJwt",     "value": "" },
+    { "key": "screenId",      "value": "" },
+    { "key": "categoryType",  "value": "MORNING", "description": "MORNING | AFTERNOON | EVENING" },
+    { "key": "slotPosition",  "value": "1", "description": "1..defaultSlotCount" },
+    { "key": "mediaId",       "value": "" },
+    { "key": "uploadUrl",     "value": "" }
   ],
   "item": [
     {
@@ -141,8 +141,9 @@
             "url": { "raw": "{{baseUrl}}/v1/screens", "host": ["{{baseUrl}}"], "path": ["v1", "screens"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Lobby Screen\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\"\n}"
-            }
+              "raw": "{\n  \"name\": \"Lobby Screen\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"defaultSlotLengthSeconds\": 10,\n  \"defaultSlotCount\": 6\n}"
+            },
+            "description": "Creates a screen. Auto-creates 3 categories (MORNING 09-12, AFTERNOON 12-17, EVENING 17-22). defaultSlotLengthSeconds and defaultSlotCount are optional (defaults: 10s, 6 slots)."
           }
         },
         {
@@ -164,7 +165,7 @@
             "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Lobby Screen (Updated)\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"name\": \"Lobby Screen (Updated)\",\n  \"location\": \"Main Entrance\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"defaultSlotLengthSeconds\": 15,\n  \"defaultSlotCount\": 4\n}"
             }
           }
         },
@@ -195,83 +196,224 @@
       ]
     },
     {
-      "name": "Slots",
+      "name": "Categories",
+      "description": "Each screen has 3 fixed categories: MORNING, AFTERNOON, EVENING. They are auto-created when the screen is created with default time windows. You can update the time windows or toggle them active/inactive.",
       "item": [
         {
-          "name": "List Slots",
+          "name": "List Categories",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] }
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories"]
+            },
+            "description": "Returns all 3 categories for the screen ordered by startTime."
           }
         },
         {
-          "name": "Create Slot — time_based",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const body = pm.response.json();",
-                  "    if (body.success && body.data) {",
-                  "        pm.collectionVariables.set('slotId', body.data.id);",
-                  "        console.log('slotId saved:', body.data.id);",
-                  "    }",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{jwt}}" }
-            ],
-            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Morning Prime\",\n  \"slotType\": \"time_based\",\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"12:00:00\",\n  \"daysOfWeek\": [1, 2, 3, 4, 5],\n  \"position\": null,\n  \"durationSeconds\": null\n}"
-            }
-          }
-        },
-        {
-          "name": "Create Slot — sequential",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{jwt}}" }
-            ],
-            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Playlist Item\",\n  \"slotType\": \"sequential\",\n  \"startTime\": null,\n  \"endTime\": null,\n  \"daysOfWeek\": null,\n  \"position\": 1,\n  \"durationSeconds\": 15\n}"
-            }
-          }
-        },
-        {
-          "name": "Update Slot",
+          "name": "Update Category Times — MORNING",
           "request": {
             "method": "PUT",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{jwt}}" }
             ],
-            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots", "{{slotId}}"] },
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Morning Prime (Updated)\",\n  \"slotType\": \"time_based\",\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"11:00:00\",\n  \"daysOfWeek\": [0, 1, 2, 3, 4, 5, 6],\n  \"position\": null,\n  \"durationSeconds\": null\n}"
+              "raw": "{\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"12:00:00\"\n}"
+            },
+            "description": "Update the time window for MORNING. Repeat with AFTERNOON or EVENING in the URL for other categories. startTime must be before endTime."
+          }
+        },
+        {
+          "name": "Update Category Times — AFTERNOON",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/AFTERNOON",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "AFTERNOON"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"12:00:00\",\n  \"endTime\": \"17:00:00\"\n}"
             }
           }
         },
         {
-          "name": "Delete Slot",
+          "name": "Update Category Times — EVENING",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/EVENING",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "EVENING"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"17:00:00\",\n  \"endTime\": \"22:00:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle Category Active — MORNING",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING", "toggle"]
+            },
+            "description": "Toggles isActive on the category. Inactive categories are excluded from schedule pushes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slot Assignments",
+      "description": "Each category has slots numbered 1..defaultSlotCount. Each slot holds 0 or 1 video. The video's durationSeconds must match the screen's defaultSlotLengthSeconds.",
+      "item": [
+        {
+          "name": "List Slots — MORNING",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING", "slots"]
+            },
+            "description": "Returns all slot positions (1..defaultSlotCount). Empty slots have mediaId/name/mediaType as null."
+          }
+        },
+        {
+          "name": "List Slots — AFTERNOON",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/AFTERNOON/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "AFTERNOON", "slots"]
+            }
+          }
+        },
+        {
+          "name": "List Slots — EVENING",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/EVENING/slots",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "EVENING", "slots"]
+            }
+          }
+        },
+        {
+          "name": "Assign Media to Slot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/{{categoryType}}/slots/{{slotPosition}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "{{categoryType}}", "slots", "{{slotPosition}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            },
+            "description": "Assigns a media to a slot position. Validates:\n- Media must be active (confirmed)\n- Media must be video (not image)\n- Media durationSeconds must match screen.defaultSlotLengthSeconds\n- Position must be between 1 and defaultSlotCount\n\nIf the slot is already occupied, the existing assignment is replaced."
+          }
+        },
+        {
+          "name": "Assign Media to Slot — MORNING slot 1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING/slots/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING", "slots", "1"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Media to Slot — MORNING slot 2",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING/slots/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING", "slots", "2"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Clear Slot",
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/slots/{{slotId}}", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "slots", "{{slotId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/{{categoryType}}/slots/{{slotPosition}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "{{categoryType}}", "slots", "{{slotPosition}}"]
+            },
+            "description": "Removes the media assignment from a slot. The slot becomes empty."
+          }
+        },
+        {
+          "name": "Assign — invalid position (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/screens/{{screenId}}/categories/MORNING/slots/99",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "screens", "{{screenId}}", "categories", "MORNING", "slots", "99"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaId\": \"{{mediaId}}\"\n}"
+            }
           }
         }
       ]
@@ -317,9 +459,9 @@
             "url": { "raw": "{{baseUrl}}/v1/media", "host": ["{{baseUrl}}"], "path": ["v1", "media"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Promo Video Q1\",\n  \"filename\": \"promo-q1.mp4\",\n  \"mimeType\": \"video/mp4\",\n  \"fileSizeBytes\": 10485760,\n  \"durationSeconds\": 30\n}"
+              "raw": "{\n  \"name\": \"Promo Video Q1\",\n  \"filename\": \"promo-q1.mp4\",\n  \"mimeType\": \"video/mp4\",\n  \"fileSizeBytes\": 10485760,\n  \"durationSeconds\": 10\n}"
             },
-            "description": "Step 1 of 2. Creates a pending DB record and returns a presigned S3 PUT URL (valid 15 min). mediaType is derived server-side from mimeType.\n\nAfter this call:\n1. PUT your file directly to the uploadUrl with Content-Type matching mimeType\n2. Call 'Confirm Media' to mark the record active"
+            "description": "Step 1 of 2. Creates a pending DB record and returns a presigned S3 PUT URL (valid 15 min). durationSeconds must match the screen's defaultSlotLengthSeconds (default 10s) to be assignable.\n\nAfter this call:\n1. PUT your file directly to the uploadUrl with Content-Type matching mimeType\n2. Call 'Confirm Media' to mark the record active"
           }
         },
         {
@@ -334,7 +476,7 @@
               "mode": "file",
               "file": {}
             },
-            "description": "Step 2 of 3 (direct S3 upload — no backend involved).\n\nSelect your file in the Body tab (binary). The Content-Type header must match the mimeType you sent in 'Create Media' — S3 enforces this as part of the presigned URL signature and will reject mismatches.\n\nThe {{uploadUrl}} variable is auto-populated by 'Create Media'."
+            "description": "Direct S3 upload — no backend involved. Select your file in the Body tab (binary). The Content-Type header must match the mimeType from Create Media."
           }
         },
         {
@@ -343,7 +485,7 @@
             "method": "PATCH",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}/confirm", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}", "confirm"] },
-            "description": "Step 3 of 3. Call this after the S3 upload completes. Marks the record active so it appears in list, can be assigned to slots, and is included in schedule pushes to devices."
+            "description": "Step 2 of 2. Marks the record active so it can be assigned to slots and included in schedule pushes."
           }
         },
         {
@@ -351,8 +493,7 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
-            "description": "Returns a single media record regardless of status. Active records include a fresh 24hr presigned download URL. Pending records return downloadUrl: null."
+            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] }
           }
         },
         {
@@ -360,60 +501,7 @@
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] },
-            "description": "Deletes the S3 object then removes the DB record. Requires real AWS credentials — will fail locally with fake credentials."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Assignments",
-      "item": [
-        {
-          "name": "List Assignments",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments"] }
-          }
-        },
-        {
-          "name": "Create Assignment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const body = pm.response.json();",
-                  "    if (body.success && body.data) {",
-                  "        pm.collectionVariables.set('assignmentId', body.data.id);",
-                  "        console.log('assignmentId saved:', body.data.id);",
-                  "    }",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{jwt}}" }
-            ],
-            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"mediaId\": \"{{mediaId}}\",\n  \"displayOrder\": 1\n}"
-            }
-          }
-        },
-        {
-          "name": "Delete Assignment",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
-            "url": { "raw": "{{baseUrl}}/v1/slots/{{slotId}}/assignments/{{assignmentId}}", "host": ["{{baseUrl}}"], "path": ["v1", "slots", "{{slotId}}", "assignments", "{{assignmentId}}"] }
+            "url": { "raw": "{{baseUrl}}/v1/media/{{mediaId}}", "host": ["{{baseUrl}}"], "path": ["v1", "media", "{{mediaId}}"] }
           }
         }
       ]
@@ -427,7 +515,7 @@
             "method": "POST",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/v1/screens/{{screenId}}/push", "host": ["{{baseUrl}}"], "path": ["v1", "screens", "{{screenId}}", "push"] },
-            "description": "Builds the full schedule payload (time-based + sequential slots with presigned media URLs) and pushes it to the screen via SSE. Also returns the payload in the response."
+            "description": "Builds the full schedule and pushes it to the screen via SSE. Returns the schedule payload.\n\nResponse shape:\n{\n  screenId, timezone, defaultSlotLengthSeconds, generatedAt,\n  categories: [\n    {\n      category: \"MORNING\",\n      startTime: \"09:00\", endTime: \"12:00\", isActive: true,\n      slots: [\n        { position: 1, mediaId, name, mediaType, url },\n        { position: 2, mediaId: null, name: null, mediaType: null, url: null }\n      ]\n    }, ...\n  ]\n}"
           }
         }
       ]
@@ -455,9 +543,9 @@
             "url": { "raw": "{{baseUrl}}/v1/device/impressions", "host": ["{{baseUrl}}"], "path": ["v1", "device", "impressions"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"impressions\": [\n    {\n      \"slotId\": \"{{slotId}}\",\n      \"mediaId\": \"{{mediaId}}\",\n      \"playedAt\": \"2026-05-13T10:00:00Z\",\n      \"durationPlayedSeconds\": 30,\n      \"completed\": true\n    }\n  ]\n}"
+              "raw": "{\n  \"impressions\": [\n    {\n      \"mediaId\": \"{{mediaId}}\",\n      \"category\": \"MORNING\",\n      \"slotPosition\": 1,\n      \"playedAt\": \"2026-05-14T10:00:00Z\",\n      \"durationPlayedSeconds\": 10,\n      \"completed\": true\n    }\n  ]\n}"
             },
-            "description": "Batch upload up to 500 impression records from the device. Uses device JWT."
+            "description": "Batch upload up to 500 impression records. category and slotPosition are optional but recommended for analytics."
           }
         },
         {
@@ -469,7 +557,7 @@
               { "key": "Accept", "value": "text/event-stream" }
             ],
             "url": { "raw": "{{baseUrl}}/v1/device/stream", "host": ["{{baseUrl}}"], "path": ["v1", "device", "stream"] },
-            "description": "Opens a Server-Sent Events stream. The device listens here for schedule updates pushed by the admin. Postman will keep the connection open — use a browser or curl to see the stream."
+            "description": "Opens a Server-Sent Events stream. The device listens here for schedule updates pushed by admin."
           }
         }
       ]
@@ -488,9 +576,9 @@
               "path": ["v1", "analytics", "impressions"],
               "query": [
                 { "key": "screenId", "value": "{{screenId}}" },
-                { "key": "mediaId",  "value": "", "disabled": true, "description": "Optional filter by media" },
-                { "key": "from",     "value": "2026-05-01",  "description": "ISO date (YYYY-MM-DD)" },
-                { "key": "to",       "value": "2026-05-31",  "description": "ISO date (YYYY-MM-DD)" }
+                { "key": "mediaId",  "value": "", "disabled": true },
+                { "key": "from",     "value": "2026-05-01" },
+                { "key": "to",       "value": "2026-05-31" }
               ]
             }
           }
