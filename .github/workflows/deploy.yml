@@ -59,9 +59,3 @@ jobs:
             --force-new-deployment \
             --region ap-south-1
 
-      - name: Wait for deployment to stabilise
-        run: |
-          aws ecs wait services-stable \
-            --cluster cms-cluster \
-            --services cms-service \
-            --region ap-south-1
