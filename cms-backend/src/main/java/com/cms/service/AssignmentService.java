@@ -63,10 +63,11 @@ public class AssignmentService {
         if (!MediaService.STATUS_ACTIVE.equals(media.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Media is not active");
         }
-        if (!"video".equals(media.getMediaType())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only video media can be assigned to slots");
+        if (!"video".equals(media.getMediaType()) && !"photo".equals(media.getMediaType())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only video or photo media can be assigned to slots");
         }
-        if (media.getDurationSeconds() != null
+        if ("video".equals(media.getMediaType())
+                && media.getDurationSeconds() != null
                 && !media.getDurationSeconds().equals(screen.getDefaultSlotLengthSeconds())) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
                     "Video duration " + media.getDurationSeconds() + "s does not match slot length "
