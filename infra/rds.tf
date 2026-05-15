@@ -1,8 +1,12 @@
 resource "aws_db_subnet_group" "main" {
-  name       = "cms-db-subnet-group"
-  subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+  name       = "cms-db-subnet-group-pub"
+  subnet_ids = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 
-  tags = { Name = "cms-db-subnet-group" }
+  tags = { Name = "cms-db-subnet-group-pub" }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_db_instance" "postgres" {
@@ -18,7 +22,7 @@ resource "aws_db_instance" "postgres" {
   password = var.db_password
 
   multi_az               = false
-  publicly_accessible    = false
+  publicly_accessible    = true
   skip_final_snapshot    = true
   deletion_protection    = false
   backup_retention_period = 0

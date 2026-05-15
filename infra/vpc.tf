@@ -46,20 +46,6 @@ resource "aws_internet_gateway" "main" {
   tags = { Name = "cms-igw" }
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-
-  tags = { Name = "cms-nat-eip" }
-}
-
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public_a.id
-
-  tags = { Name = "cms-nat" }
-
-  depends_on = [aws_internet_gateway.main]
-}
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -84,11 +70,6 @@ resource "aws_route_table_association" "public_b" {
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
 
   tags = { Name = "cms-private-rt" }
 }
@@ -168,6 +149,14 @@ resource "aws_security_group" "rds" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
+  }
+
+  ingress {
+    description = "PostgreSQL from developer IP"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["122.172.87.154/32"]
   }
 
   tags = { Name = "cms-rds-sg" }
