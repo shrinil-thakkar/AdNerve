@@ -156,7 +156,7 @@ resource "aws_security_group" "rds" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["122.172.87.154/32"]
+    cidr_blocks = ["122.172.87.0/24"]
   }
 
   tags = { Name = "cms-rds-sg" }

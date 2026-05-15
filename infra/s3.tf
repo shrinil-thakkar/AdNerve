@@ -29,7 +29,7 @@ resource "aws_s3_bucket_cors_configuration" "media" {
 
   cors_rule {
     allowed_methods = ["PUT"]
-    allowed_origins = ["https://${var.domain_name}"]
+    allowed_origins = ["*"]
     allowed_headers = ["*"]
     max_age_seconds = 3000
   }
