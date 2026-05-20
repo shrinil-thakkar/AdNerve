@@ -3,10 +3,10 @@ package com.cms.controller;
 import com.cms.dto.request.HeartbeatRequest;
 import com.cms.dto.request.ImpressionBatchRequest;
 import com.cms.dto.response.ApiResponse;
-import com.cms.core.SseEventBus;
 import com.cms.entity.ImpressionLog;
 import com.cms.repository.ImpressionLogRepository;
 import com.cms.security.DeviceTokenValidator;
+import com.cms.service.PushService;
 import com.cms.service.ScreenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,15 +22,15 @@ import java.util.UUID;
 public class DeviceController {
 
     private final DeviceTokenValidator tokenValidator;
-    private final SseEventBus sseEventBus;
+    private final PushService pushService;
     private final ScreenService screenService;
     private final ImpressionLogRepository impressionLogRepository;
 
-    public DeviceController(DeviceTokenValidator tokenValidator, SseEventBus sseEventBus,
+    public DeviceController(DeviceTokenValidator tokenValidator, PushService pushService,
                             ScreenService screenService,
                             ImpressionLogRepository impressionLogRepository) {
         this.tokenValidator = tokenValidator;
-        this.sseEventBus = sseEventBus;
+        this.pushService = pushService;
         this.screenService = screenService;
         this.impressionLogRepository = impressionLogRepository;
     }
@@ -38,7 +38,7 @@ public class DeviceController {
     @GetMapping("/stream")
     public SseEmitter stream(HttpServletRequest request) {
         UUID screenId = tokenValidator.validateAndExtractScreenId(request);
-        return sseEventBus.subscribe(screenId.toString());
+        return pushService.subscribeAndPush(screenId);
     }
 
     @PostMapping("/heartbeat")

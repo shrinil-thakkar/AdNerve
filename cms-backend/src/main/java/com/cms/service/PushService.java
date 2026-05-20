@@ -5,6 +5,7 @@ import com.cms.dto.response.ScheduleResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.UUID;
 
@@ -29,5 +30,12 @@ public class PushService {
             log.info("Screen {} is not connected via SSE — schedule resolved but not pushed", screenId);
         }
         return schedule;
+    }
+
+    public SseEmitter subscribeAndPush(UUID screenId) {
+        SseEmitter emitter = sseEventBus.subscribe(screenId.toString());
+        ScheduleResponse schedule = scheduleService.resolveSchedule(screenId);
+        sseEventBus.publish(screenId.toString(), schedule);
+        return emitter;
     }
 }
