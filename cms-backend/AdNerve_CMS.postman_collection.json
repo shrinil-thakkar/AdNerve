@@ -12,7 +12,8 @@
     { "key": "categoryType",  "value": "MORNING", "description": "MORNING | AFTERNOON | EVENING" },
     { "key": "slotPosition",  "value": "1", "description": "1..defaultSlotCount" },
     { "key": "mediaId",       "value": "" },
-    { "key": "uploadUrl",     "value": "" }
+    { "key": "uploadUrl",     "value": "" },
+    { "key": "pairingCode",   "value": "", "description": "8-char code from screen pairingCode field" }
   ],
   "item": [
     {
@@ -125,7 +126,9 @@
                   "    const body = pm.response.json();",
                   "    if (body.success && body.data) {",
                   "        pm.collectionVariables.set('screenId', body.data.id);",
+                  "        pm.collectionVariables.set('pairingCode', body.data.pairingCode);",
                   "        console.log('screenId saved:', body.data.id);",
+                  "        console.log('pairingCode saved:', body.data.pairingCode);",
                   "    }",
                   "}"
                 ]
@@ -523,6 +526,47 @@
     {
       "name": "Device",
       "item": [
+        {
+          "name": "Register Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    if (body.success && body.data) {",
+                  "        pm.collectionVariables.set('deviceJwt', body.data.accessToken);",
+                  "        console.log('Device JWT saved to collection variable');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/v1/device/register", "host": ["{{baseUrl}}"], "path": ["v1", "device", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"{{pairingCode}}\"\n}"
+            },
+            "description": "Device-initiated registration. Send the 8-char pairing code shown on the screen's detail page in the CMS (available as `pairingCode` in the GET /v1/screens response). Returns a long-lived device JWT. No authentication required.\n\nDashes and spaces in the code are stripped automatically, so 'ABCD-2345' and 'ABCD2345' are treated identically."
+          }
+        },
+        {
+          "name": "Register Device — invalid code (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/v1/device/register", "host": ["{{baseUrl}}"], "path": ["v1", "device", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"ZZZZZZZZ\"\n}"
+            }
+          }
+        },
         {
           "name": "Heartbeat",
           "request": {
