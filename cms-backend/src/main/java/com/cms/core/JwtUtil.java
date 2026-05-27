@@ -72,6 +72,10 @@ public class JwtUtil {
         return UUID.fromString(parseToken(token).get("screenId", String.class));
     }
 
+    public long getDeviceTokenExpireDays() {
+        return deviceTokenExpireDays;
+    }
+
     public boolean isTokenValid(String token) {
         try {
             parseToken(token);

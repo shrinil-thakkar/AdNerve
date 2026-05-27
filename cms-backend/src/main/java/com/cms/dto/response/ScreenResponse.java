@@ -12,5 +12,6 @@ public record ScreenResponse(
         Integer defaultSlotCount,
         OffsetDateTime lastSeenAt,
         boolean online,
-        boolean isActive
+        boolean isActive,
+        String pairingCode
 ) {}

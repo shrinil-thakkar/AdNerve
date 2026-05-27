@@ -42,7 +42,7 @@ class ScreenControllerTest {
 
     private ScreenResponse sampleScreen() {
         return new ScreenResponse(UUID.randomUUID(), "Lobby Screen", "Main Entrance",
-                "Asia/Kolkata", 10, 6, null, false, true);
+                "Asia/Kolkata", 10, 6, null, false, true, "ABCD2345");
     }
 
     @Test

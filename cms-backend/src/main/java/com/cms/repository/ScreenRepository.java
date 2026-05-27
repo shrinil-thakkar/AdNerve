@@ -12,4 +12,6 @@ public interface ScreenRepository extends JpaRepository<Screen, UUID> {
     List<Screen> findAllByIsActiveTrue();
 
     Optional<Screen> findByIdAndIsActiveTrue(UUID id);
+
+    Optional<Screen> findByDeviceTokenAndIsActiveTrue(String deviceToken);
 }

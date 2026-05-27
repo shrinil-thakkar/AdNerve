@@ -1,6 +1,7 @@
 package com.cms.service;
 
 import com.cms.core.JwtUtil;
+import com.cms.dto.request.DeviceRegisterRequest;
 import com.cms.dto.request.DeviceTokenRequest;
 import com.cms.dto.request.LoginRequest;
 import com.cms.dto.response.TokenResponse;
@@ -42,6 +43,14 @@ public class AuthService {
         screenRepository.findByIdAndIsActiveTrue(request.screenId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Screen not found"));
         String token = jwtUtil.generateDeviceToken(request.screenId(), request.expiresDays());
+        return new TokenResponse(token, "bearer");
+    }
+
+    public TokenResponse registerDevice(DeviceRegisterRequest request) {
+        String normalizedCode = request.pairingCode().toUpperCase().replace("-", "").replace(" ", "");
+        var screen = screenRepository.findByDeviceTokenAndIsActiveTrue(normalizedCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid pairing code"));
+        String token = jwtUtil.generateDeviceToken(screen.getId(), (int) jwtUtil.getDeviceTokenExpireDays());
         return new TokenResponse(token, "bearer");
     }
 }

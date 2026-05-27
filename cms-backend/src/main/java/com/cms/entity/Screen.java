@@ -24,7 +24,7 @@ public class Screen {
 
     private String location;
 
-    @Column(name = "device_token", unique = true, nullable = false, length = 512)
+    @Column(name = "device_token", unique = true, nullable = false, length = 16)
     private String deviceToken;
 
     private String timezone = "UTC";

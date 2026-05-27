@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.SecureRandom;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -22,6 +23,9 @@ import java.util.UUID;
 public class ScreenService {
 
     private static final int ONLINE_THRESHOLD_SECONDS = 60;
+    private static final String PAIRING_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789";
+    private static final int PAIRING_CODE_LENGTH = 8;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final ScreenRepository screenRepository;
     private final ScreenCategoryRepository screenCategoryRepository;
@@ -50,7 +54,7 @@ public class ScreenService {
         screen.setName(request.name());
         screen.setLocation(request.location());
         screen.setTimezone(request.timezone() != null ? request.timezone() : "UTC");
-        screen.setDeviceToken(UUID.randomUUID().toString());
+        screen.setDeviceToken(generatePairingCode());
         if (request.defaultSlotLengthSeconds() != null) {
             screen.setDefaultSlotLengthSeconds(request.defaultSlotLengthSeconds());
         }
@@ -87,6 +91,14 @@ public class ScreenService {
         screenRepository.save(screen);
     }
 
+    private String generatePairingCode() {
+        StringBuilder sb = new StringBuilder(PAIRING_CODE_LENGTH);
+        for (int i = 0; i < PAIRING_CODE_LENGTH; i++) {
+            sb.append(PAIRING_ALPHABET.charAt(SECURE_RANDOM.nextInt(PAIRING_ALPHABET.length())));
+        }
+        return sb.toString();
+    }
+
     private void createDefaultCategories(UUID screenId) {
         record CategoryDef(CategoryType type, LocalTime start, LocalTime end) {}
         List.of(
@@ -115,7 +127,8 @@ public class ScreenService {
                 screen.getDefaultSlotCount(),
                 screen.getLastSeenAt(),
                 online,
-                Boolean.TRUE.equals(screen.getIsActive())
+                Boolean.TRUE.equals(screen.getIsActive()),
+                screen.getDeviceToken()
         );
     }
 }

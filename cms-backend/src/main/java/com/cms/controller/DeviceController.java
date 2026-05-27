@@ -1,8 +1,11 @@
 package com.cms.controller;
 
+import com.cms.dto.request.DeviceRegisterRequest;
 import com.cms.dto.request.HeartbeatRequest;
 import com.cms.dto.request.ImpressionBatchRequest;
 import com.cms.dto.response.ApiResponse;
+import com.cms.dto.response.TokenResponse;
+import com.cms.service.AuthService;
 import com.cms.entity.ImpressionLog;
 import com.cms.repository.ImpressionLogRepository;
 import com.cms.security.DeviceTokenValidator;
@@ -25,14 +28,22 @@ public class DeviceController {
     private final PushService pushService;
     private final ScreenService screenService;
     private final ImpressionLogRepository impressionLogRepository;
+    private final AuthService authService;
 
     public DeviceController(DeviceTokenValidator tokenValidator, PushService pushService,
                             ScreenService screenService,
-                            ImpressionLogRepository impressionLogRepository) {
+                            ImpressionLogRepository impressionLogRepository,
+                            AuthService authService) {
         this.tokenValidator = tokenValidator;
         this.pushService = pushService;
         this.screenService = screenService;
         this.impressionLogRepository = impressionLogRepository;
+        this.authService = authService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<TokenResponse>> register(@Valid @RequestBody DeviceRegisterRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.registerDevice(request)));
     }
 
     @GetMapping("/stream")
